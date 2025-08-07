@@ -33,12 +33,13 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Required scripts
 REQUIRED_SCRIPTS=(
-    "configure-proxmox.sh"
-    "fix-repositories.sh"
-    "fix-locale.sh"
-    "update-system.sh"
-    "setup-powertop.sh"
-    "setup-wol.sh"
+    "basic-config/configure-proxmox.sh"
+    "basic-config/fix-repositories.sh"
+    "basic-config/fix-locale.sh"
+    "basic-config/update-system.sh"
+    "basic-config/setup-powertop.sh"
+    "basic-config/setup-wol.sh"
+    "downloads/download-templates.sh"
 )
 
 # Check if all required scripts exist
@@ -80,20 +81,20 @@ TEMP_DIR="/tmp/proxmox-setup-$(date +%s)"
 print_status "Creating temp directory: $TEMP_DIR"
 ssh $SSH_OPTS "$SSH_USER@$PROXMOX_IP" "mkdir -p $TEMP_DIR"
 
-# Copy files using rsync (more efficient, single connection)
+# Copy files using rsync (preserving directory structure)
 print_status "Copying setup scripts..."
-rsync -avz -e "ssh $SSH_OPTS" "$SCRIPT_DIR"/*.sh "$SSH_USER@$PROXMOX_IP:$TEMP_DIR/"
+rsync -avz -e "ssh $SSH_OPTS" "$SCRIPT_DIR"/basic-config "$SCRIPT_DIR"/downloads "$SSH_USER@$PROXMOX_IP:$TEMP_DIR/"
 
 # Make all scripts executable
 print_status "Making scripts executable..."
-ssh $SSH_OPTS "$SSH_USER@$PROXMOX_IP" "chmod +x $TEMP_DIR/*.sh"
+ssh $SSH_OPTS "$SSH_USER@$PROXMOX_IP" "find $TEMP_DIR -name '*.sh' -exec chmod +x {} \;"
 
 # Execute main script
 print_status "Executing Proxmox configuration..."
 print_warning "This may take several minutes..."
 echo ""
 
-if ssh $SSH_OPTS "$SSH_USER@$PROXMOX_IP" "cd $TEMP_DIR && bash configure-proxmox.sh"; then
+if ssh $SSH_OPTS "$SSH_USER@$PROXMOX_IP" "cd $TEMP_DIR/basic-config && bash configure-proxmox.sh"; then
     print_status "Configuration completed successfully!"
 else
     print_error "Configuration failed!"

@@ -12,18 +12,26 @@ This collection of scripts helps configure a freshly installed Proxmox system by
 
 ## Scripts Overview
 
+### Directory Structure
+- **`basic-config/`** - Core Proxmox configuration scripts
+- **`downloads/`** - OS template and ISO download scripts
+- **`run-setup.sh`** - Remote execution script (in root)
+
 ### Remote Runner
 - **`run-setup.sh`** - Remotely executes the entire setup process via SSH (recommended)
 
 ### Main Script
-- **`configure-proxmox.sh`** - Main orchestrator script that runs all individual scripts in sequence
+- **`basic-config/configure-proxmox.sh`** - Main orchestrator script that runs all individual scripts in sequence
 
-### Individual Scripts
-- **`fix-repositories.sh`** - Disables enterprise repositories to avoid subscription warnings
-- **`fix-locale.sh`** - Fixes SSH locale warnings by generating proper UTF-8 locales
-- **`update-system.sh`** - Performs full system update (apt update && apt upgrade)
-- **`setup-powertop.sh`** - Installs and configures PowerTOP for automatic power optimization
-- **`setup-wol.sh`** - Sets up Wake-on-LAN functionality
+### Basic Configuration Scripts
+- **`basic-config/fix-repositories.sh`** - Disables enterprise repositories to avoid subscription warnings
+- **`basic-config/fix-locale.sh`** - Fixes SSH locale warnings by generating proper UTF-8 locales
+- **`basic-config/update-system.sh`** - Performs full system update (apt update && apt upgrade)
+- **`basic-config/setup-powertop.sh`** - Installs and configures PowerTOP for automatic power optimization
+- **`basic-config/setup-wol.sh`** - Sets up Wake-on-LAN functionality
+
+### Download Scripts
+- **`downloads/download-templates.sh`** - Downloads common OS templates and ISOs (Ubuntu, Debian)
 
 ## Usage
 
@@ -44,7 +52,7 @@ The script will automatically:
 ### Direct Setup on Proxmox Server
 If you're already on the Proxmox server, run:
 ```bash
-sudo bash configure-proxmox.sh
+sudo bash basic-config/configure-proxmox.sh
 ```
 
 ### Run Individual Scripts
@@ -52,19 +60,22 @@ You can also run individual scripts if you only need specific functionality:
 
 ```bash
 # Fix repositories only
-sudo bash fix-repositories.sh
+sudo bash basic-config/fix-repositories.sh
 
 # Fix locale warnings only
-sudo bash fix-locale.sh
+sudo bash basic-config/fix-locale.sh
 
 # Update system only
-sudo bash update-system.sh
+sudo bash basic-config/update-system.sh
 
 # Setup PowerTOP only
-sudo bash setup-powertop.sh
+sudo bash basic-config/setup-powertop.sh
 
 # Setup Wake-on-LAN only
-sudo bash setup-wol.sh
+sudo bash basic-config/setup-wol.sh
+
+# Download OS templates and ISOs only
+sudo bash downloads/download-templates.sh
 ```
 
 ## What Each Script Does
@@ -96,6 +107,14 @@ sudo bash setup-wol.sh
 - Enables Wake-on-LAN for the detected interface
 - Shows MAC address for remote wake commands
 - Provides instructions for using `wakeonlan` from other machines
+
+### download-templates.sh
+- Updates Proxmox template database with `pveam update`
+- Downloads Ubuntu 24.04 LTS container template (25.04 when available)
+- Downloads Debian 12 container template
+- Downloads Ubuntu 24.04 Desktop ISO for VMs
+- Downloads Debian 12 netinstall ISO for VMs
+- Provides instructions for manually adding Windows ISOs
 
 ## Requirements
 
