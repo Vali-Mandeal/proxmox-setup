@@ -10,18 +10,21 @@ print_status() {
     echo -e "${GREEN}[POWER]${NC} $1"
 }
 
-# Install powertop
-if command -v powertop >/dev/null 2>&1; then
-    print_status "PowerTOP already installed"
-else
-    print_status "Installing PowerTOP"
-    apt install -y powertop
-fi
+install_powertop() {
+    if command -v powertop >/dev/null 2>&1; then
+        print_status "PowerTOP already installed"
+    else
+        print_status "Installing PowerTOP"
+        apt install -y powertop
+    fi
+}
 
-# Create/configure service
-if [ -f "/etc/systemd/system/powertop.service" ]; then
-    print_status "PowerTOP service already exists"
-else
+create_powertop_service() {
+    if [ -f "/etc/systemd/system/powertop.service" ]; then
+        print_status "PowerTOP service already exists"
+        return
+    fi
+    
     print_status "Creating PowerTOP service"
     cat > /etc/systemd/system/powertop.service << 'EOF'
 [Unit]
@@ -35,19 +38,24 @@ ExecStart=/usr/sbin/powertop --auto-tune
 WantedBy=multi-user.target
 EOF
     systemctl daemon-reload
-fi
+}
 
-# Enable and start service
-if systemctl is-enabled powertop.service >/dev/null 2>&1; then
-    print_status "PowerTOP service already enabled"
-else
-    print_status "Enabling PowerTOP service"
-    systemctl enable powertop.service
-fi
+enable_and_start_powertop_service() {
+    if systemctl is-enabled powertop.service >/dev/null 2>&1; then
+        print_status "PowerTOP service already enabled"
+    else
+        print_status "Enabling PowerTOP service"
+        systemctl enable powertop.service
+    fi
 
-if systemctl is-active powertop.service >/dev/null 2>&1; then
-    print_status "PowerTOP service already running"
-else
-    print_status "Starting PowerTOP service"
-    systemctl start powertop.service
-fi
+    if systemctl is-active powertop.service >/dev/null 2>&1; then
+        print_status "PowerTOP service already running"
+    else
+        print_status "Starting PowerTOP service"
+        systemctl start powertop.service
+    fi
+}
+
+install_powertop
+create_powertop_service
+enable_and_start_powertop_service

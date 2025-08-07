@@ -15,26 +15,23 @@ print_warning() {
     echo -e "${YELLOW}[REPO]${NC} $1"
 }
 
-# Disable pve-enterprise
-if [ -f "/etc/apt/sources.list.d/pve-enterprise.sources" ]; then
-    mv /etc/apt/sources.list.d/pve-enterprise.sources /etc/apt/sources.list.d/pve-enterprise.sources.disabled
-    print_status "Disabled pve-enterprise.sources"
-elif [ -f "/etc/apt/sources.list.d/pve-enterprise.sources.disabled" ]; then
-    print_status "pve-enterprise.sources already disabled"
-else
-    print_warning "pve-enterprise.sources not found"
-fi
+disable_enterprise_repo() {
+    local repo_file=$1
+    local display_name=$2
+    
+    if [ -f "$repo_file" ]; then
+        mv "$repo_file" "$repo_file.disabled"
+        print_status "Disabled $display_name"
+    elif [ -f "$repo_file.disabled" ]; then
+        print_status "$display_name already disabled"
+    else
+        print_warning "$display_name not found"
+    fi
+}
 
-# Disable ceph
-if [ -f "/etc/apt/sources.list.d/ceph.sources" ]; then
-    mv /etc/apt/sources.list.d/ceph.sources /etc/apt/sources.list.d/ceph.sources.disabled
-    print_status "Disabled ceph.sources"
-elif [ -f "/etc/apt/sources.list.d/ceph.sources.disabled" ]; then
-    print_status "ceph.sources already disabled"
-else
-    print_warning "ceph.sources not found"
-fi
+disable_enterprise_repo "/etc/apt/sources.list.d/pve-enterprise.sources" "pve-enterprise.sources"
+disable_enterprise_repo "/etc/apt/sources.list.d/ceph.sources" "ceph.sources"
 
-# Update package list
+
 print_status "Updating package list"
 apt update

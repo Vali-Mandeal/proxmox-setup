@@ -31,76 +31,79 @@ pvesm status | grep -E "(local|storage)" || true
 TEMPLATE_STORAGE="local"
 ISO_STORAGE="local"
 
-print_status "Downloading LXC container templates..."
-
-# Ubuntu 24.04 LTS (latest stable)
-print_status "Downloading Ubuntu 24.04 LTS template..."
-if pveam available | grep -q "ubuntu-24.04"; then
-    UBUNTU_TEMPLATE=$(pveam available | grep "ubuntu-24.04" | head -n1 | awk '{print $2}')
-    if ! pveam list $TEMPLATE_STORAGE | grep -q "$UBUNTU_TEMPLATE"; then
-        pveam download $TEMPLATE_STORAGE $UBUNTU_TEMPLATE
-        print_status "Ubuntu 24.04 LTS template downloaded"
+download_lxc_template() {
+    local template_name=$1
+    local template_var=$2
+    
+    print_status "Starting download: $template_name template..."
+    if pveam available | grep -q "$template_var"; then
+        TEMPLATE=$(pveam available | grep "$template_var" | head -n1 | awk '{print $2}')
+        if ! pveam list $TEMPLATE_STORAGE | grep -q "$TEMPLATE"; then
+            pveam download $TEMPLATE_STORAGE $TEMPLATE >/dev/null 2>&1
+            print_status "$template_name template downloaded successfully"
+        else
+            print_status "$template_name template already exists"
+        fi
     else
-        print_status "Ubuntu 24.04 LTS template already exists"
+        print_warning "$template_name template not available in repository"
     fi
-else
-    print_warning "Ubuntu 24.04 template not available in repository"
-fi
+}
 
-# Ubuntu 25.04
-print_status "Downloading Ubuntu 25.04 template..."
-if pveam available | grep -q "ubuntu-25.04"; then
-    UBUNTU_25_TEMPLATE=$(pveam available | grep "ubuntu-25.04" | head -n1 | awk '{print $2}')
-    if ! pveam list $TEMPLATE_STORAGE | grep -q "$UBUNTU_25_TEMPLATE"; then
-        pveam download $TEMPLATE_STORAGE $UBUNTU_25_TEMPLATE
-        print_status "Ubuntu 25.04 template downloaded"
+download_latest_lxc_templates() {
+    print_status "Starting LXC container template downloads..."
+    
+    # Get latest Ubuntu LTS template
+    if pveam available | grep -q "ubuntu.*standard"; then
+        UBUNTU_LTS=$(pveam available | grep "ubuntu.*standard" | grep -E "(22\.04|24\.04|26\.04)" | sort -V | tail -n1 | awk '{print $2}')
+        if [ -n "$UBUNTU_LTS" ]; then
+            UBUNTU_NAME=$(echo "$UBUNTU_LTS" | sed 's/.*ubuntu-\([0-9.]*\).*/Ubuntu \1 LTS/')
+            nohup bash -c "$(declare -f download_lxc_template print_status print_warning); download_lxc_template '$UBUNTU_NAME' '$UBUNTU_LTS'" >/dev/null 2>&1 &
+        fi
+    fi
+    
+    # Get latest Debian stable template
+    if pveam available | grep -q "debian.*standard"; then
+        DEBIAN_LATEST=$(pveam available | grep "debian.*standard" | sort -V | tail -n1 | awk '{print $2}')
+        if [ -n "$DEBIAN_LATEST" ]; then
+            DEBIAN_NAME=$(echo "$DEBIAN_LATEST" | sed 's/.*debian-\([0-9]*\).*/Debian \1/')
+            nohup bash -c "$(declare -f download_lxc_template print_status print_warning); download_lxc_template '$DEBIAN_NAME' '$DEBIAN_LATEST'" >/dev/null 2>&1 &
+        fi
+    fi
+}
+
+download_iso_silently() {
+    local name=$1
+    local url=$2
+    local filename=$3
+    local iso_path="$ISO_DIR/$filename"
+    
+    if [ ! -f "$iso_path" ]; then
+        print_status "Starting download: $name..."
+        wget -q -O "$iso_path" "$url" && \
+        print_status "$name downloaded successfully" || \
+        { print_warning "Failed to download $name"; rm -f "$iso_path"; }
     else
-        print_status "Ubuntu 25.04 template already exists"
+        print_status "$name already exists"
     fi
-else
-    print_warning "Ubuntu 25.04 template not available in repository"
-fi
+}
 
-# Debian 12 (Bookworm)
-print_status "Downloading Debian 12 template..."
-if pveam available | grep -q "debian-12"; then
-    DEBIAN_TEMPLATE=$(pveam available | grep "debian-12" | head -n1 | awk '{print $2}')
-    if ! pveam list $TEMPLATE_STORAGE | grep -q "$DEBIAN_TEMPLATE"; then
-        pveam download $TEMPLATE_STORAGE $DEBIAN_TEMPLATE
-        print_status "Debian 12 template downloaded"
-    else
-        print_status "Debian 12 template already exists"
-    fi
-else
-    print_warning "Debian 12 template not found in repository"
-fi
+download_latest_iso_images() {
+    print_status "Starting ISO downloads..."
+    
+    ISO_DIR="/var/lib/vz/template/iso"
+    
+    # Download latest Ubuntu LTS Desktop ISO
+    nohup bash -c "$(declare -f download_iso_silently print_status print_warning); ISO_DIR='$ISO_DIR'; download_iso_silently 'Ubuntu LTS Desktop ISO' 'https://releases.ubuntu.com/24.04.1/ubuntu-24.04.1-desktop-amd64.iso' 'ubuntu-24.04.1-desktop-amd64.iso'" >/dev/null 2>&1 &
+    
+    # Download latest Debian stable netinst ISO  
+    nohup bash -c "$(declare -f download_iso_silently print_status print_warning); ISO_DIR='$ISO_DIR'; download_iso_silently 'Debian Stable ISO' 'https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.11.0-amd64-netinst.iso' 'debian-12.11.0-amd64-netinst.iso'" >/dev/null 2>&1 &
+}
 
-print_status "Downloading ISO images for VMs..."
+download_latest_lxc_templates
 
-# ISO directory should exist by default in Proxmox
-ISO_DIR="/var/lib/vz/template/iso"
+download_latest_iso_images
 
-# Ubuntu 24.04 Desktop ISO (for VMs)
-print_status "Downloading Ubuntu 24.04 Desktop ISO..."
-UBUNTU_ISO="ubuntu-24.04.1-desktop-amd64.iso"
-UBUNTU_URL="https://releases.ubuntu.com/24.04.1/$UBUNTU_ISO"
-if [ ! -f "$ISO_DIR/$UBUNTU_ISO" ]; then
-    wget -P "$ISO_DIR" "$UBUNTU_URL" || print_warning "Failed to download Ubuntu ISO"
-    print_status "Ubuntu 24.04 Desktop ISO downloaded"
-else
-    print_status "Ubuntu Desktop ISO already exists"
-fi
-
-# Debian 12 ISO (for VMs)
-print_status "Downloading Debian 12 ISO..."
-DEBIAN_ISO="debian-12.8.0-amd64-netinst.iso"
-DEBIAN_URL="https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/$DEBIAN_ISO"
-if [ ! -f "$ISO_DIR/$DEBIAN_ISO" ]; then
-    wget -P "$ISO_DIR" "$DEBIAN_URL" || print_warning "Failed to download Debian ISO"
-    print_status "Debian 12 ISO downloaded"
-else
-    print_status "Debian ISO already exists"
-fi
+print_status "All downloads started in background!"
 
 print_status "Windows ISOs require manual download due to licensing..."
 print_warning "For Windows ISOs, you need to:"
@@ -108,14 +111,4 @@ print_warning "1. Download Windows Server 2025 from Microsoft Volume Licensing"
 print_warning "2. Download Windows 11 from https://www.microsoft.com/software-download/windows11"
 print_warning "3. Upload them to Proxmox via web interface: Datacenter > Storage > local > ISO Images"
 
-print_status "Showing downloaded templates and ISOs:"
-echo ""
-print_status "LXC Templates:"
-pveam list $TEMPLATE_STORAGE | grep -E "(ubuntu|debian)" || echo "No templates found"
-
-echo ""
-print_status "ISO Images:"
-ls -lh "$ISO_DIR"/*.iso 2>/dev/null || echo "No ISOs found"
-
-print_status "Template and ISO download completed!"
-print_status "You can now create containers and VMs using these templates"
+print_status "Downloads will continue in background while setup proceeds"

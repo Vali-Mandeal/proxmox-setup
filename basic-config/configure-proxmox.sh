@@ -30,16 +30,13 @@ if [ "$EUID" -ne 0 ]; then
     exit 1
 fi
 
-# Get script directory
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOWNLOADS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/../downloads" && pwd)"
 
-# Run script function
 run_script() {
     local script_name=$1
     local script_path="$SCRIPT_DIR/$script_name"
     
-    # Check if script is in downloads directory
     if [ ! -f "$script_path" ] && [ -f "$DOWNLOADS_DIR/$script_name" ]; then
         script_path="$DOWNLOADS_DIR/$script_name"
     fi
@@ -53,27 +50,21 @@ run_script() {
     fi
 }
 
-# Fix repositories
 print_status "Fixing enterprise repositories"
 run_script "fix-repositories.sh"
 
-# Fix locale warnings
 print_status "Fixing SSH locale warnings"
 run_script "fix-locale.sh"
 
-# Update system
 print_status "Updating system"
 run_script "update-system.sh"
 
-# Setup PowerTOP
 print_status "Setting up PowerTOP"
 run_script "setup-powertop.sh"
 
-# Setup Wake-on-LAN
 print_status "Setting up Wake-on-LAN"
 run_script "setup-wol.sh"
 
-# Download OS templates and ISOs
 print_status "Downloading OS templates and ISOs"
 run_script "download-templates.sh"
 
