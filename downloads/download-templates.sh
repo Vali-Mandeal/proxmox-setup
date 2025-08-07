@@ -57,7 +57,7 @@ download_latest_lxc_templates() {
         UBUNTU_LTS=$(pveam available | grep "ubuntu.*standard" | grep -E "(22\.04|24\.04|26\.04)" | sort -V | tail -n1 | awk '{print $2}')
         if [ -n "$UBUNTU_LTS" ]; then
             UBUNTU_NAME=$(echo "$UBUNTU_LTS" | sed 's/.*ubuntu-\([0-9.]*\).*/Ubuntu \1 LTS/')
-            nohup bash -c "$(declare -f download_lxc_template print_status print_warning); download_lxc_template '$UBUNTU_NAME' '$UBUNTU_LTS'" >/dev/null 2>&1 &
+            nohup bash -c "$(declare -f download_lxc_template print_status print_warning); TEMPLATE_STORAGE='$TEMPLATE_STORAGE'; download_lxc_template '$UBUNTU_NAME' '$UBUNTU_LTS'" >/dev/null 2>&1 &
         fi
     fi
     
@@ -66,7 +66,7 @@ download_latest_lxc_templates() {
         DEBIAN_LATEST=$(pveam available | grep "debian.*standard" | sort -V | tail -n1 | awk '{print $2}')
         if [ -n "$DEBIAN_LATEST" ]; then
             DEBIAN_NAME=$(echo "$DEBIAN_LATEST" | sed 's/.*debian-\([0-9]*\).*/Debian \1/')
-            nohup bash -c "$(declare -f download_lxc_template print_status print_warning); download_lxc_template '$DEBIAN_NAME' '$DEBIAN_LATEST'" >/dev/null 2>&1 &
+            nohup bash -c "$(declare -f download_lxc_template print_status print_warning); TEMPLATE_STORAGE='$TEMPLATE_STORAGE'; download_lxc_template '$DEBIAN_NAME' '$DEBIAN_LATEST'" >/dev/null 2>&1 &
         fi
     fi
 }
