@@ -1,0 +1,9 @@
+tunnel: ${TUNNEL_ID}
+credentials-file: /etc/cloudflared/cred.json
+warp-routing:
+  enabled: true
+
+ingress:
+  - hostname: "*.example.com"
+    service: http://host.docker.internal:80
+  - service: http_status:404
