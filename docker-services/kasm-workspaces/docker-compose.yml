@@ -1,0 +1,16 @@
+services:
+  kasm-desktop:
+    image: kasmweb/desktop:1.17.0-rolling-daily
+    container_name: kasm-desktop
+    restart: unless-stopped
+    shm_size: 512m
+    environment:
+      - VNC_PW=${VNC_PW:-password}
+    ports:
+      - "${KASM_PORT:-6901}:6901"
+    networks:
+      - kasm-net
+
+networks:
+  kasm-net:
+    driver: bridge
