@@ -95,6 +95,9 @@ download_latest_iso_images() {
     # Download latest Ubuntu LTS Desktop ISO
     nohup bash -c "$(declare -f download_iso_silently print_status print_warning); ISO_DIR='$ISO_DIR'; download_iso_silently 'Ubuntu LTS Desktop ISO' 'https://releases.ubuntu.com/24.04.1/ubuntu-24.04.1-desktop-amd64.iso' 'ubuntu-24.04.1-desktop-amd64.iso'" >/dev/null 2>&1 &
     
+    # Download latest Ubuntu LTS Server ISO (headless)
+    nohup bash -c "$(declare -f download_iso_silently print_status print_warning); ISO_DIR='$ISO_DIR'; download_iso_silently 'Ubuntu LTS Server ISO' 'https://releases.ubuntu.com/24.04.1/ubuntu-24.04.1-live-server-amd64.iso' 'ubuntu-24.04.1-live-server-amd64.iso'" >/dev/null 2>&1 &
+    
     # Download latest Debian stable netinst ISO  
     nohup bash -c "$(declare -f download_iso_silently print_status print_warning); ISO_DIR='$ISO_DIR'; download_iso_silently 'Debian Stable ISO' 'https://cdimage.debian.org/debian-cd/current/amd64/iso-cd/debian-12.11.0-amd64-netinst.iso' 'debian-12.11.0-amd64-netinst.iso'" >/dev/null 2>&1 &
 }
